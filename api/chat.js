@@ -3,12 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, textProvider } = req.body;
+  const { messages } = req.body;
 
-  const isHF = textProvider === "hf";
-  const apiUrl = isHF ? "https://router.huggingface.co/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
-  const apiKey = isHF ? process.env.HF_API_KEY : process.env.OPENROUTER_KEY;
-  const model  = isHF ? "arcee-ai/Trinity-Large-Thinking:featherless-ai" : "openai/gpt-4o-mini";
+  const apiUrl = "https://router.huggingface.co/v1/chat/completions";
+  const apiKey = process.env.HF_API_KEY;
+  const model  = "arcee-ai/Trinity-Large-Thinking:featherless-ai";
 
   if (!apiKey) {
     return res.status(500).json({ error: 'API key not configured in Vercel Environment Variables.' });
@@ -19,8 +18,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        ...(isHF ? {} : { "HTTP-Referer": req.headers.referer || "https://ai-chatbot-activity-l7.vercel.app", "X-Title": "NeuralChat" })
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: model,

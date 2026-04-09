@@ -12,7 +12,6 @@
 // Keys are now securely hidden in Vercel Serverless Functions.
 
 // --------------- Model Configuration ---------------
-let currentTextProvider = "or"; // Default changed to OpenRouter
 const TEXT_API_ENDPOINT = "/api/chat";
 const IMAGE_API_ENDPOINT = "/api/image";
 
@@ -444,15 +443,14 @@ async function callTextAPI(userText) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      messages: messages,
-      textProvider: currentTextProvider
+      messages: messages
     }),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(`${currentTextProvider === 'hf' ? 'HF' : 'OpenRouter'} API error ${response.status}: ${data.error ? JSON.stringify(data.error) : 'Unknown Error'}`);
+    throw new Error(`HF API error ${response.status}: ${data.error ? JSON.stringify(data.error) : 'Unknown Error'}`);
   }
 
   const assistantReply = data.choices[0].message.content;
@@ -685,13 +683,6 @@ navImage.addEventListener("click", (e) => {
   // Pre-fill placeholder hint for image mode
   userInput.placeholder = "Describe the image you want…";
   setTimeout(() => { userInput.placeholder = "Message NeuralChat…"; }, 5000);
-});
-
-// Model switcher handler
-const modelSelect = document.getElementById("modelSelect");
-modelSelect.addEventListener("change", (e) => {
-  currentTextProvider = e.target.value;
-  showToast(`Switched to ${currentTextProvider === 'hf' ? 'Hugging Face' : 'OpenRouter'} model`, "success");
 });
 
 // ============================================================
