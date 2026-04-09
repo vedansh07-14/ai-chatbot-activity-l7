@@ -151,6 +151,30 @@ function autoResizeTextarea() {
   userInput.style.height = Math.min(userInput.scrollHeight, 160) + "px";
 }
 
+/**
+ * Simple intent detection: checks if the user is asking for an image.
+ */
+function isImageRequest(text) {
+  const lower = text.toLowerCase().trim();
+  const triggers = ["generate", "create", "make", "draw", "show me", "picture of", "image of", "photo of"];
+  const nouns = ["image", "picture", "photo", "painting", "drawing", "portrait", "sketch"];
+  
+  // If it contains a trigger and a noun, OR strongly starts with "draw" or "generate"
+  const hasTrigger = triggers.some(t => lower.includes(t));
+  const hasNoun = nouns.some(n => lower.includes(n));
+  
+  return (hasTrigger && hasNoun) || lower.startsWith("draw ") || lower.startsWith("generate ");
+}
+
+/**
+ * Extracts a clean prompt from a natural language request.
+ * e.g., "Generate a picture of a cute cat" -> "a cute cat"
+ */
+function extractPrompt(text) {
+  return text.replace(/^(generate|create|make|draw|show me|give me)\s+(an?|the)?\s+(image|picture|photo|painting|drawing|sketch|portrait)?\s*(of|about)?\s+/i, "").trim();
+}
+
+
 // ============================================================
 //  💬 RENDER FUNCTIONS
 // ============================================================
@@ -571,8 +595,18 @@ async function sendMessage() {
     appendMessage("user", text);
   }
 
+  // AUTO-DETECTION: If the user asked for an image, trigger generateImage logic instead of chat
+  if (isImageRequest(text)) {
+    const prompt = extractPrompt(text);
+    // We need to set the value back to the cleaned prompt for generateImage to pick it up
+    userInput.value = prompt;
+    generateImage();
+    return;
+  }
+
   // Show typing indicator
   const typingRow = appendTypingIndicator();
+
 
   try {
     let reply = await callTextAPI(finalMessage);
