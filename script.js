@@ -21,7 +21,7 @@ const TEXT_MODEL  = "arcee-ai/Trinity-Large-Thinking:featherless-ai";
 const IMAGE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0";
 
 // --------------- Model Configuration ---------------
-let currentTextProvider = "hf"; // 'hf' or 'or'
+let currentTextProvider = "or"; // Default changed to OpenRouter because HF key was revoked
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODEL   = "openai/gpt-4o-mini";
 
