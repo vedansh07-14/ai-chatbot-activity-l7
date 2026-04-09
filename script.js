@@ -543,8 +543,14 @@ async function sendMessage() {
   const typingRow = appendTypingIndicator();
 
   try {
-    const reply = await callTextAPI(text);
+    let reply = await callTextAPI(text);
     removeTypingIndicator();
+    
+    // Prevent empty bubbles if the AI returns empty content
+    if (!reply || reply.trim() === "") {
+      reply = "I'm sorry, the AI provider didn't return any text. Please try asking your question again.";
+    }
+    
     appendMessage("bot", reply);
   } catch (err) {
     removeTypingIndicator();
