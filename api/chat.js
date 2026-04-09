@@ -7,19 +7,7 @@ export default async function handler(req, res) {
 
   const apiUrl = "https://router.huggingface.co/v1/chat/completions";
   const apiKey = process.env.HF_API_KEY;
-  
-  // Default text model (Trinity)
-  let model = "arcee-ai/Trinity-Large-Thinking:featherless-ai";
-
-  // Check if any message contains an image
-  const hasImage = messages.some(msg => 
-    Array.isArray(msg.content) && msg.content.some(item => item.type === "image_url")
-  );
-
-  if (hasImage) {
-    // Switch to Vision model if an image is attached
-    model = "meta-llama/Llama-3.2-11B-Vision-Instruct";
-  }
+  const model  = "arcee-ai/Trinity-Large-Thinking:featherless-ai";
 
   if (!apiKey) {
     return res.status(500).json({ error: 'API key not configured in Vercel Environment Variables.' });
@@ -35,7 +23,6 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: model,
         messages: messages,
-        max_tokens: 2048
       }),
     });
 

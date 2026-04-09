@@ -75,7 +75,6 @@ Goal: Create the experience of talking to a real, intelligent being — alive, r
 ];
 
 let isLoading = false; // Prevent double-submits
-let attachedImage = null; // Stores Base64 string of the attached photo
 
 // ============================================================
 //  📌 DOM REFERENCES
@@ -86,6 +85,9 @@ const welcomeScreen  = document.getElementById("welcomeScreen");
 const userInput      = document.getElementById("userInput");
 const sendBtn        = document.getElementById("sendBtn");
 const imageBtn       = document.getElementById("imageBtn");
+const attachBtn      = document.getElementById("attachBtn");
+const fileInput      = document.getElementById("fileInput");
+const imagePreview   = document.getElementById("imagePreview");
 const micBtn         = document.getElementById("micBtn");
 const clearBtn       = document.getElementById("clearBtn");
 const toast          = document.getElementById("toast");
@@ -94,9 +96,9 @@ const sidebar        = document.getElementById("sidebar");
 const chatTitle      = document.getElementById("chatTitle");
 const navChat        = document.getElementById("nav-chat");
 const navImage       = document.getElementById("nav-image");
-const attachmentPreview = document.getElementById("attachmentPreview");
-const previewImg        = document.getElementById("previewImg");
-const removeAttachmentBtn = document.getElementById("removeAttachmentBtn");
+
+let attachedImageData = null; // Stores Base64 of local image
+
 
 // ============================================================
 //  🎨 HELPER UTILITIES
@@ -117,55 +119,6 @@ function hideWelcome() {
 /** Scrolls chat to the bottom smoothly */
 function scrollToBottom() {
   chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
-}
-
-/**
- * Simulates cognitive processing delay (Human Timing Engine)
- * @param {number} min 
- * @param {number} max 
- */
-function simulateCognition(min = 400, max = 1200) {
-  const delay = Math.floor(Math.random() * (max - min + 1) + min);
-  return new Promise(res => setTimeout(res, delay));
-}
-
-
-/**
- * Handles image file selection (paste or drop)
- * @param {File} file 
- */
-function handleFileUpload(file) {
-  if (!file || !file.type.startsWith("image/")) {
-    showToast("Please select a valid image file.", "error");
-    return;
-  }
-
-  // Max size check (e.g., 4MB)
-  if (file.size > 4 * 1024 * 1024) {
-    showToast("Image too large. Please use an image under 4MB.", "error");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    attachedImage = e.target.result;
-    previewImg.src = attachedImage;
-    attachmentPreview.classList.remove("hidden");
-    autoResizeTextarea();
-    userInput.focus();
-  };
-  reader.readAsDataURL(file);
-}
-
-/**
- * Removes the currently attached image
- */
-function removeAttachment() {
-  attachedImage = null;
-  previewImg.src = "";
-  attachmentPreview.classList.add("hidden");
-  autoResizeTextarea();
-  userInput.focus();
 }
 
 /**
@@ -247,25 +200,11 @@ function appendMessage(role, content, isError = false) {
   const bubble = document.createElement("div");
   bubble.className = `bubble${isError ? " error-bubble" : ""}`;
 
-  // Content: string = plain text, Node = DOM element, or Object = multimodal array
+  // Content: string = plain text, Node = DOM element
   if (typeof content === "string") {
     bubble.innerHTML = formatMarkdown(content);
-  } else if (content instanceof Node) {
+  } else {
     bubble.appendChild(content);
-  } else if (Array.isArray(content)) {
-    // Multimodal array handler for previewing sent images
-    content.forEach(item => {
-      if (item.type === "text") {
-        const p = document.createElement("div");
-        p.innerHTML = formatMarkdown(item.text);
-        bubble.appendChild(p);
-      } else if (item.type === "image_url") {
-        const img = document.createElement("img");
-        img.src = item.image_url.url;
-        img.className = "sent-preview-img";
-        bubble.appendChild(img);
-      }
-    });
   }
 
   const ts = document.createElement("span");
@@ -541,19 +480,9 @@ function renderImageInBubble(bubble, base64Data, prompt) {
  * @param {string} userText - The user's latest message
  * @returns {Promise<string>} The AI's reply text
  */
-async function callTextAPI(userText, imageBase64 = null) {
+async function callTextAPI(userText) {
   // Push user message into history before calling API
-  if (imageBase64) {
-    messages.push({
-      role: "user",
-      content: [
-        { type: "text", text: userText },
-        { type: "image_url", image_url: { url: imageBase64 } }
-      ]
-    });
-  } else {
-    messages.push({ role: "user", content: userText });
-  }
+  messages.push({ role: "user", content: userText });
 
   const response = await fetch(TEXT_API_ENDPOINT, {
     method: "POST",
@@ -621,47 +550,34 @@ async function sendMessage() {
   if (isLoading) return;
 
   const text = userInput.value.trim();
-  const imageToUpload = attachedImage; // Capture current state
-
-  if (!text && !imageToUpload) {
+  if (!text && !attachedImageData) {
     showToast("Please type a message or attach an image.", "error");
     return;
   }
 
+  const finalMessage = text || (attachedImageData ? "Sent an image." : "");
+
   // Clear input & reset height
   userInput.value = "";
   autoResizeTextarea();
-  if (attachedImage) removeAttachment();
 
   setLoading(true);
 
-  // Show user message (multimodal if image exists)
-  if (imageToUpload) {
-    appendMessage("user", [
-      { type: "text", text: text },
-      { type: "image_url", image_url: { url: imageToUpload } }
-    ]);
+  // Show user message (with image if present)
+  if (attachedImageData) {
+    appendUserMessageWithImage(text, attachedImageData);
+    clearAttachment();
   } else {
     appendMessage("user", text);
   }
-
-  // NOVA X: Human Timing Engine - Slight delay before typing indicator
-  await simulateCognition(300, 600);
 
   // Show typing indicator
   const typingRow = appendTypingIndicator();
 
   try {
-    // Simulate complex thought for longer prompts
-    if (text.length > 100) await simulateCognition(800, 1500);
-
-    let reply = await callTextAPI(text, imageToUpload);
-    
-    // Slight pause before removing indicator for realism
-    await simulateCognition(200, 400);
+    let reply = await callTextAPI(finalMessage);
     removeTypingIndicator();
     
-    // Prevent empty bubbles if the AI returns empty content
     if (!reply || reply.trim() === "") {
       reply = "I'm sorry, the AI provider didn't return any text. Please try asking your question again.";
     }
@@ -671,12 +587,75 @@ async function sendMessage() {
     removeTypingIndicator();
     console.error("Text API error:", err);
     appendMessage("bot", `❌ Error: ${err.message}`, true);
-    showToast("API request failed. Check console for details.", "error");
+    showToast("API request failed. Check console.", "error");
   } finally {
     setLoading(false);
     userInput.focus();
   }
 }
+
+/**
+ * Custom helper to show user message with an image thumbnail
+ */
+function appendUserMessageWithImage(text, base64) {
+  const content = document.createElement("div");
+  content.className = "user-image-content";
+  
+  if (text) {
+    const p = document.createElement("p");
+    p.textContent = text;
+    p.style.marginBottom = "8px";
+    content.appendChild(p);
+  }
+
+  const img = new Image();
+  img.src = base64;
+  img.className = "user-attached-img";
+  img.style.maxWidth = "200px";
+  img.style.borderRadius = "8px";
+  img.style.display = "block";
+  content.appendChild(img);
+
+  appendMessage("user", content);
+}
+
+/**
+ * Handles local file selection from Finder
+ */
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showToast("Please select an image file.", "error");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    attachedImageData = event.target.result;
+    showPreview(attachedImageData);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showPreview(base64) {
+  imagePreview.innerHTML = `
+    <div class="preview-item">
+      <img src="${base64}" alt="Preview">
+      <button class="remove-preview" onclick="clearAttachment()">×</button>
+    </div>
+  `;
+  imagePreview.classList.remove("hidden");
+}
+
+window.clearAttachment = function() {
+  attachedImageData = null;
+  fileInput.value = "";
+  imagePreview.innerHTML = "";
+  imagePreview.classList.add("hidden");
+};
+
 
 // ============================================================
 //  🖼  GENERATE IMAGE HANDLER
@@ -758,8 +737,13 @@ function clearConversation() {
 // Send on button click
 sendBtn.addEventListener("click", sendMessage);
 
+// Attach from Finder
+attachBtn.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", handleFileSelect);
+
 // Image generate on button click
 imageBtn.addEventListener("click", generateImage);
+
 
 // Clear conversation
 clearBtn.addEventListener("click", clearConversation);
@@ -831,40 +815,6 @@ console.log(
   "background: linear-gradient(135deg,#6d28d9,#4f46e5); color:#fff; font-size:14px; padding:6px 12px; border-radius:6px; font-weight:700;",
   "\nSuccessfully connected to Hugging Face API.\nEnjoy your AI experience!"
 );
-
-// --- Image Attachment Listeners ---
-
-// Close attachment
-removeAttachmentBtn.addEventListener("click", removeAttachment);
-
-// Handle Paste
-userInput.addEventListener("paste", (e) => {
-  const items = e.clipboardData.items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf("image") !== -1) {
-      const file = items[i].getAsFile();
-      handleFileUpload(file);
-    }
-  }
-});
-
-// Handle Drag & Drop
-userInput.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  userInput.classList.add("drag-over");
-});
-
-userInput.addEventListener("dragleave", () => {
-  userInput.classList.remove("drag-over");
-});
-
-userInput.addEventListener("drop", (e) => {
-  e.preventDefault();
-  userInput.classList.remove("drag-over");
-  const file = e.dataTransfer.files[0];
-  handleFileUpload(file);
-});
-
 // ============================================================
 //  🎙 VOICE INPUT (STT)
 // ============================================================
