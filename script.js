@@ -7,23 +7,14 @@
  */
 
 // ============================================================
-//  🔑 API CONFIGURATION
+//  📍 API CONFIGURATION (Vercel Backend)
 // ============================================================
-const HF_API_KEY       = window.ENV?.HF_API_KEY || "YOUR_HF_API_KEY"; // Hugging Face
-const OPENROUTER_KEY   = window.ENV?.OPENROUTER_KEY || "YOUR_OPENROUTER_KEY"; // OpenRouter
-
-// --------------- API Endpoints ---------------
-const TEXT_API_URL = "https://router.huggingface.co/v1/chat/completions";
-const IMAGE_API_URL = "https://router.huggingface.co/nscale/v1/images/generations";
-
-// --------------- AI Models ---------------
-const TEXT_MODEL  = "arcee-ai/Trinity-Large-Thinking:featherless-ai";
-const IMAGE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0";
+// Keys are now securely hidden in Vercel Serverless Functions.
 
 // --------------- Model Configuration ---------------
-let currentTextProvider = "or"; // Default changed to OpenRouter because HF key was revoked
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_MODEL   = "openai/gpt-4o-mini";
+let currentTextProvider = "or"; // Default changed to OpenRouter
+const TEXT_API_ENDPOINT = "/api/chat";
+const IMAGE_API_ENDPOINT = "/api/image";
 
 // ============================================================
 //  🧠 STATE
@@ -447,30 +438,23 @@ async function callTextAPI(userText) {
   // Push user message into history before calling API
   messages.push({ role: "user", content: userText });
 
-  const isHF = currentTextProvider === "hf";
-  const apiUrl = isHF ? TEXT_API_URL : OPENROUTER_API_URL;
-  const apiKey = isHF ? HF_API_KEY : OPENROUTER_KEY;
-  const model  = isHF ? TEXT_MODEL  : OPENROUTER_MODEL;
-
-  const response = await fetch(apiUrl, {
+  const response = await fetch(TEXT_API_ENDPOINT, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(isHF ? {} : { "HTTP-Referer": window.location.href, "X-Title": "NeuralChat" })
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: model,
       messages: messages,
+      textProvider: currentTextProvider
     }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    const errBody = await response.text();
-    throw new Error(`${isHF ? 'HF' : 'OpenRouter'} API error ${response.status}: ${errBody}`);
+    throw new Error(`${currentTextProvider === 'hf' ? 'HF' : 'OpenRouter'} API error ${response.status}: ${data.error ? JSON.stringify(data.error) : 'Unknown Error'}`);
   }
 
-  const data = await response.json();
   const assistantReply = data.choices[0].message.content;
 
   // Push assistant reply into history
@@ -485,26 +469,22 @@ async function callTextAPI(userText) {
  * @returns {Promise<string>} Base64 PNG string
  */
 async function callImageAPI(prompt) {
-  const response = await fetch(IMAGE_API_URL, {
+  const response = await fetch(IMAGE_API_ENDPOINT, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${HF_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: IMAGE_MODEL,
-      prompt: prompt,
-      response_format: "b64_json",
+      prompt: prompt
     }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    const errBody = await response.text();
-    throw new Error(`Image API error ${response.status}: ${errBody}`);
+    throw new Error(`Image API error ${response.status}: ${data.error ? JSON.stringify(data.error) : 'Unknown Error'}`);
   }
 
-  const data = await response.json();
-  // The API returns: { data: [{ b64_json: "..." }] }
   const base64Data = data.data[0].b64_json;
   return base64Data;
 }
