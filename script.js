@@ -722,6 +722,8 @@ async function generateImage() {
     return;
   }
 
+  console.log(`[UI] Starting image generation for: "${prompt}"`);
+
   // Clear input
   userInput.value = "";
   autoResizeTextarea();
@@ -732,26 +734,42 @@ async function generateImage() {
   appendMessage("user", `🖼 Generate image: "${prompt}"`);
 
   // Show skeleton loader
-  const { row: skeletonRow, bubble: skeletonBubble } = appendImageSkeleton(prompt);
+  let skeletonRow, skeletonBubble;
+  try {
+    const skeleton = appendImageSkeleton(prompt);
+    skeletonRow = skeleton.row;
+    skeletonBubble = skeleton.bubble;
+  } catch (skError) {
+    console.error("[UI] Error appending skeleton:", skError);
+    // Continue anyway or show error
+  }
 
   try {
     const base64 = await callImageAPI(prompt);
-    renderImageInBubble(skeletonBubble, base64, prompt);
+    
+    if (skeletonBubble) {
+      renderImageInBubble(skeletonBubble, base64, prompt);
+    } else {
+      // Fallback if skeleton failed
+      appendMessage("bot", `[Image received for: "${prompt}"]`);
+    }
+    
     showToast("Image generated!", "success");
 
     // Also push a note into conversation history
     messages.push({ role: "assistant", content: `[Generated an image for: "${prompt}"]` });
   } catch (err) {
     // Replace skeleton with error bubble
-    skeletonRow.remove();
-    console.error("Image API error:", err);
+    if (skeletonRow) skeletonRow.remove();
+    console.error("[UI] Image generation failure:", err);
     appendMessage("bot", `❌ Image generation failed: ${err.message}`, true);
-    showToast("Image generation failed. Check console.", "error");
+    showToast("Image generation failed.", "error");
   } finally {
     setLoading(false);
     userInput.focus();
   }
 }
+
 
 // ============================================================
 //  🧹 CLEAR CONVERSATION
