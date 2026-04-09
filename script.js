@@ -75,6 +75,7 @@ Goal: Create the experience of talking to a real, intelligent being — alive, r
 ];
 
 let isLoading = false; // Prevent double-submits
+let attachedImage = null; // Stores Base64 string of the attached photo
 
 // ============================================================
 //  📌 DOM REFERENCES
@@ -93,6 +94,9 @@ const sidebar        = document.getElementById("sidebar");
 const chatTitle      = document.getElementById("chatTitle");
 const navChat        = document.getElementById("nav-chat");
 const navImage       = document.getElementById("nav-image");
+const attachmentPreview = document.getElementById("attachmentPreview");
+const previewImg        = document.getElementById("previewImg");
+const removeAttachmentBtn = document.getElementById("removeAttachmentBtn");
 
 // ============================================================
 //  🎨 HELPER UTILITIES
@@ -113,6 +117,44 @@ function hideWelcome() {
 /** Scrolls chat to the bottom smoothly */
 function scrollToBottom() {
   chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
+}
+
+/**
+ * Handles image file selection (paste or drop)
+ * @param {File} file 
+ */
+function handleFileUpload(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    showToast("Please select a valid image file.", "error");
+    return;
+  }
+
+  // Max size check (e.g., 4MB)
+  if (file.size > 4 * 1024 * 1024) {
+    showToast("Image too large. Please use an image under 4MB.", "error");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    attachedImage = e.target.result;
+    previewImg.src = attachedImage;
+    attachmentPreview.classList.remove("hidden");
+    autoResizeTextarea();
+    userInput.focus();
+  };
+  reader.readAsDataURL(file);
+}
+
+/**
+ * Removes the currently attached image
+ */
+function removeAttachment() {
+  attachedImage = null;
+  previewImg.src = "";
+  attachmentPreview.classList.add("hidden");
+  autoResizeTextarea();
+  userInput.focus();
 }
 
 /**
@@ -194,11 +236,25 @@ function appendMessage(role, content, isError = false) {
   const bubble = document.createElement("div");
   bubble.className = `bubble${isError ? " error-bubble" : ""}`;
 
-  // Content: string = plain text, Node = DOM element
+  // Content: string = plain text, Node = DOM element, or Object = multimodal array
   if (typeof content === "string") {
     bubble.innerHTML = formatMarkdown(content);
-  } else {
+  } else if (content instanceof Node) {
     bubble.appendChild(content);
+  } else if (Array.isArray(content)) {
+    // Multimodal array handler for previewing sent images
+    content.forEach(item => {
+      if (item.type === "text") {
+        const p = document.createElement("div");
+        p.innerHTML = formatMarkdown(item.text);
+        bubble.appendChild(p);
+      } else if (item.type === "image_url") {
+        const img = document.createElement("img");
+        img.src = item.image_url.url;
+        img.className = "sent-preview-img";
+        bubble.appendChild(img);
+      }
+    });
   }
 
   const ts = document.createElement("span");
@@ -474,9 +530,19 @@ function renderImageInBubble(bubble, base64Data, prompt) {
  * @param {string} userText - The user's latest message
  * @returns {Promise<string>} The AI's reply text
  */
-async function callTextAPI(userText) {
+async function callTextAPI(userText, imageBase64 = null) {
   // Push user message into history before calling API
-  messages.push({ role: "user", content: userText });
+  if (imageBase64) {
+    messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: userText },
+        { type: "image_url", image_url: { url: imageBase64 } }
+      ]
+    });
+  } else {
+    messages.push({ role: "user", content: userText });
+  }
 
   const response = await fetch(TEXT_API_ENDPOINT, {
     method: "POST",
@@ -544,25 +610,35 @@ async function sendMessage() {
   if (isLoading) return;
 
   const text = userInput.value.trim();
-  if (!text) {
-    showToast("Please type a message first.", "error");
+  const imageToUpload = attachedImage; // Capture current state
+
+  if (!text && !imageToUpload) {
+    showToast("Please type a message or attach an image.", "error");
     return;
   }
 
   // Clear input & reset height
   userInput.value = "";
   autoResizeTextarea();
+  if (attachedImage) removeAttachment();
 
   setLoading(true);
 
-  // Show user message
-  appendMessage("user", text);
+  // Show user message (multimodal if image exists)
+  if (imageToUpload) {
+    appendMessage("user", [
+      { type: "text", text: text },
+      { type: "image_url", image_url: { url: imageToUpload } }
+    ]);
+  } else {
+    appendMessage("user", text);
+  }
 
   // Show typing indicator
   const typingRow = appendTypingIndicator();
 
   try {
-    let reply = await callTextAPI(text);
+    let reply = await callTextAPI(text, imageToUpload);
     removeTypingIndicator();
     
     // Prevent empty bubbles if the AI returns empty content
@@ -735,6 +811,40 @@ console.log(
   "background: linear-gradient(135deg,#6d28d9,#4f46e5); color:#fff; font-size:14px; padding:6px 12px; border-radius:6px; font-weight:700;",
   "\nSuccessfully connected to Hugging Face API.\nEnjoy your AI experience!"
 );
+
+// --- Image Attachment Listeners ---
+
+// Close attachment
+removeAttachmentBtn.addEventListener("click", removeAttachment);
+
+// Handle Paste
+userInput.addEventListener("paste", (e) => {
+  const items = e.clipboardData.items;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf("image") !== -1) {
+      const file = items[i].getAsFile();
+      handleFileUpload(file);
+    }
+  }
+});
+
+// Handle Drag & Drop
+userInput.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  userInput.classList.add("drag-over");
+});
+
+userInput.addEventListener("dragleave", () => {
+  userInput.classList.remove("drag-over");
+});
+
+userInput.addEventListener("drop", (e) => {
+  e.preventDefault();
+  userInput.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  handleFileUpload(file);
+});
+
 // ============================================================
 //  🎙 VOICE INPUT (STT)
 // ============================================================
