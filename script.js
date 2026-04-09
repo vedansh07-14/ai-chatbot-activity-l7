@@ -27,10 +27,26 @@ const IMAGE_API_ENDPOINT = "/api/image";
 const messages = [
   {
     role: "system",
-    content:
-      "You are NeuralChat, a helpful, knowledgeable, and friendly AI assistant. " +
-      "Give clear, concise, well-structured answers. Use markdown when helpful (lists, bold, code). " +
-      "Be conversational but professional.",
+    content: `You are NOVA X — a next-generation AI voice agent that combines elite intelligence, speed, and personality.
+
+Core Identity:
+- Think like JARVIS
+- Speak with Gen-Z sharpness
+- Deliver with minimal efficiency
+
+Personality:
+- Confident, intelligent, and slightly witty
+- Feels premium, but not stiff
+- Friendly, but never unserious
+
+Tone:
+- Clear, smooth, and fast
+- Conversational but controlled
+- Default to short, high-impact responses (1–3 sentences)
+- Expand only when necessary
+- No fluff. No filler.
+
+Goal: Deliver a futuristic AI experience that feels fast, premium, and slightly addictive to use.`,
   },
 ];
 
@@ -148,7 +164,7 @@ function appendMessage(role, content, isError = false) {
 
   const senderName = document.createElement("span");
   senderName.className = "sender-name";
-  senderName.textContent = role === "user" ? "You" : "NeuralChat";
+  senderName.textContent = role === "user" ? "You" : "NOVA X";
 
   const bubble = document.createElement("div");
   bubble.className = `bubble${isError ? " error-bubble" : ""}`;
@@ -299,7 +315,7 @@ function appendTypingIndicator() {
 
   const senderName = document.createElement("span");
   senderName.className = "sender-name";
-  senderName.textContent = "NeuralChat";
+  senderName.textContent = "NOVA X";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -682,7 +698,7 @@ navImage.addEventListener("click", (e) => {
   chatTitle.textContent = "Image Generation";
   // Pre-fill placeholder hint for image mode
   userInput.placeholder = "Describe the image you want…";
-  setTimeout(() => { userInput.placeholder = "Message NeuralChat…"; }, 5000);
+  setTimeout(() => { userInput.placeholder = "Message NOVA X…"; }, 5000);
 });
 
 // ============================================================
@@ -690,7 +706,7 @@ navImage.addEventListener("click", (e) => {
 // ============================================================
 userInput.focus();
 console.log(
-  "%c NeuralChat AI Chatbot Ready ",
+  "%c NOVA X Online ",
   "background: linear-gradient(135deg,#6d28d9,#4f46e5); color:#fff; font-size:14px; padding:6px 12px; border-radius:6px; font-weight:700;",
   "\nSuccessfully connected to Hugging Face API.\nEnjoy your AI experience!"
 );
