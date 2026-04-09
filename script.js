@@ -120,6 +120,17 @@ function scrollToBottom() {
 }
 
 /**
+ * Simulates cognitive processing delay (Human Timing Engine)
+ * @param {number} min 
+ * @param {number} max 
+ */
+function simulateCognition(min = 400, max = 1200) {
+  const delay = Math.floor(Math.random() * (max - min + 1) + min);
+  return new Promise(res => setTimeout(res, delay));
+}
+
+
+/**
  * Handles image file selection (paste or drop)
  * @param {File} file 
  */
@@ -634,11 +645,20 @@ async function sendMessage() {
     appendMessage("user", text);
   }
 
+  // NOVA X: Human Timing Engine - Slight delay before typing indicator
+  await simulateCognition(300, 600);
+
   // Show typing indicator
   const typingRow = appendTypingIndicator();
 
   try {
+    // Simulate complex thought for longer prompts
+    if (text.length > 100) await simulateCognition(800, 1500);
+
     let reply = await callTextAPI(text, imageToUpload);
+    
+    // Slight pause before removing indicator for realism
+    await simulateCognition(200, 400);
     removeTypingIndicator();
     
     // Prevent empty bubbles if the AI returns empty content
