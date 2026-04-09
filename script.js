@@ -8,9 +8,9 @@
 
 // ============================================================
 //  🔑 API CONFIGURATION
-const OPENROUTER_API_KEY = import.meta.env.OPENROUTER_API_KEY;
-const HF_API_KEY = import.meta.env.HF_API_KEY;
-
+// ============================================================
+const HF_API_KEY       = window.ENV?.HF_API_KEY || "YOUR_HF_API_KEY"; // Hugging Face
+const OPENROUTER_KEY   = window.ENV?.OPENROUTER_KEY || "YOUR_OPENROUTER_KEY"; // OpenRouter
 
 // --------------- API Endpoints ---------------
 const TEXT_API_URL = "https://router.huggingface.co/v1/chat/completions";
