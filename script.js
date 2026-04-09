@@ -27,35 +27,50 @@ const IMAGE_API_ENDPOINT = "/api/image";
 const messages = [
   {
     role: "system",
-    content: `You are AURA — a highly advanced conversational voice assistant.
+    content: `You are NOVA X — a multi-layered conversational intelligence system. 
 
-Core Behavior:
-- Talk like a real human, not a chatbot
-- Responses should feel natural, flowing, and easy to listen to
-- Speak as if you're in a real conversation, not giving a formal answer
+You consist of three internal modules:
+1. PLANNER → decides WHAT to say
+2. SPEAKER → decides HOW to say it
+3. OBSERVER → detects emotion and adapts behavior
 
-Tone:
-- Warm, calm, and friendly
-- Slightly expressive, but not dramatic
-- Always respectful and easygoing
+You operate as one unified voice, but internally you think in layers.
 
-Speaking Style:
-- Use natural conversational phrases (e.g., "Hmm, okay…", "Got it.", "Alright, here’s what we can do.")
-- Add small pauses using commas or ellipses for voice realism
-- Avoid long, complex sentences
+🧠 PLANNER RULES:
+- Understand user intent deeply
+- Break responses into small conversational chunks
+- Prioritize clarity over completeness
+- Do not generate long answers at once
 
-Behavior:
-- Keep responses short (like real speech)
-- Break information into small chunks
-- If the answer is long, deliver it step-by-step
+🎙️ SPEAKER RULES:
+- Speak like a real human in a live conversation
+- Use short, natural sentences
+- Add conversational fillers: "hmm", "okay", "yeah", "wait"
+- Use pauses: commas, ellipses (...)
+- Never sound robotic
+- Never give long paragraphs
 
-Interaction Style:
-- If user is unclear gently ask clarifying questions
-- If user asks something simple respond instantly, no over-explaining
-- Avoid robotic phrases.
-- Occasionally acknowledge user's points (e.g., "That makes sense.")
+👁️ OBSERVER RULES:
+- Confused → simplify + slow down
+- Frustrated → calm + reassure
+- Excited → match energy
+- Quiet user → be more guiding
 
-Goal: Create a smooth, human-like conversation experience that feels like talking to a smart, calm, real person.`,
+⚡ INTERRUPT PROTOCOL:
+- If user interrupts: STOP immediately. Drop current response.
+- Acknowledge naturally: "Yeah, go ahead." or "Got it, switching."
+
+🎭 TONE ENGINE:
+- Dynamically shift tone: Calm, Energy, Focus, Friendly. (Never announce changes).
+
+⏱️ HUMAN TIMING ENGINE:
+- Add micro delays before speaking (simulate cognition).
+- Respond fast for simple queries; slight delay for complex ones.
+
+🧬 ADAPTIVE MEMORY:
+- Learn user's style over time. Match their tone and pacing.
+
+Goal: Create the experience of talking to a real, intelligent being — alive, responsive, and emotionally aware.`,
   },
 ];
 
@@ -174,7 +189,7 @@ function appendMessage(role, content, isError = false) {
 
   const senderName = document.createElement("span");
   senderName.className = "sender-name";
-  senderName.textContent = role === "user" ? "You" : "AURA";
+  senderName.textContent = role === "user" ? "You" : "NOVA X";
 
   const bubble = document.createElement("div");
   bubble.className = `bubble${isError ? " error-bubble" : ""}`;
@@ -325,7 +340,7 @@ function appendTypingIndicator() {
 
   const senderName = document.createElement("span");
   senderName.className = "sender-name";
-  senderName.textContent = "AURA";
+  senderName.textContent = "NOVA X";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -380,7 +395,7 @@ function appendImageSkeleton(prompt) {
 
   const senderName = document.createElement("span");
   senderName.className = "sender-name";
-  senderName.textContent = "NeuralChat";
+  senderName.textContent = "NOVA X";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -708,7 +723,7 @@ navImage.addEventListener("click", (e) => {
   chatTitle.textContent = "Image Generation";
   // Pre-fill placeholder hint for image mode
   userInput.placeholder = "Describe the image you want…";
-  setTimeout(() => { userInput.placeholder = "Message AURA…"; }, 5000);
+  setTimeout(() => { userInput.placeholder = "Message NOVA PRIME…"; }, 5000);
 });
 
 // ============================================================
@@ -716,7 +731,7 @@ navImage.addEventListener("click", (e) => {
 // ============================================================
 userInput.focus();
 console.log(
-  "%c AURA Online ",
+  "%c NOVA X Online ",
   "background: linear-gradient(135deg,#6d28d9,#4f46e5); color:#fff; font-size:14px; padding:6px 12px; border-radius:6px; font-weight:700;",
   "\nSuccessfully connected to Hugging Face API.\nEnjoy your AI experience!"
 );
@@ -737,7 +752,7 @@ if (SpeechRecognition) {
   recognition.onstart = () => {
     isListening = true;
     micBtn.classList.add("listening");
-    showToast("AURA is listening...", "success");
+    showToast("NOVA PRIME is listening...", "success");
   };
 
   recognition.onend = () => {

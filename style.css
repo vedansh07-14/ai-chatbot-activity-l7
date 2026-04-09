@@ -1,5 +1,5 @@
 /* ============================================
-   NeuralChat — Premium Dark Mode Stylesheet
+   NOVA X — Conversational Intelligence
    ============================================ */
 
 /* ---------- CSS Custom Properties ---------- */
@@ -105,12 +105,13 @@ body {
 
 .logo-text {
   font-size: 1.1rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--purple-400), var(--blue-400));
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, var(--purple-400) 50%, var(--blue-400) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
 }
 
 .sidebar-section-label {
@@ -321,13 +322,14 @@ body {
 }
 
 .welcome-screen h2 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--purple-400), var(--blue-400));
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, var(--purple-400), var(--blue-400));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
 }
 
 .welcome-screen p {
@@ -411,8 +413,9 @@ body {
 }
 
 .avatar.bot-avatar {
-  background: linear-gradient(135deg, #1e1e28, #252530);
-  border: 1px solid rgba(167,139,250,0.2);
+  background: linear-gradient(135deg, #0f172a, #1e1e28);
+  border: 1px solid rgba(167,139,250,0.4);
+  box-shadow: 0 0 15px rgba(167,139,250,0.15);
 }
 
 .avatar svg { width: 18px; height: 18px; }
