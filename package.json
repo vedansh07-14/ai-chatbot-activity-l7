@@ -2,9 +2,7 @@
   "name": "ai-chatbot-nova-x",
   "version": "1.0.0",
   "type": "module",
-  "dependencies": {
-    "@huggingface/inference": "^2.8.1"
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=18"
   }

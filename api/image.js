@@ -1,5 +1,3 @@
-import { InferenceClient } from "@huggingface/inference";
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -9,46 +7,38 @@ export default async function handler(req, res) {
   const apiKey = process.env.HF_API_KEY;
 
   if (!apiKey) {
-    console.error("CRITICAL: HF_API_KEY is missing from environment variables.");
-    return res.status(500).json({ error: 'Hugging Face API key not configured in environment variables.' });
+    return res.status(500).json({ error: 'HF_API_KEY not configured.' });
   }
-
-  // Initialize the Hugging Face Inference Client
-  const client = new InferenceClient(apiKey);
-
-  console.log(`Generating image for prompt: "${prompt}" using provider: "nscale"...`);
 
   try {
-    // Generate an image using the specified provider and model
-    const blob = await client.textToImage({
-      provider: "nscale",
-      model: "stabilityai/stable-diffusion-xl-base-1.0",
-      inputs: prompt,
-      parameters: { 
-        num_inference_steps: 5 
+    const response = await fetch("https://router.huggingface.co/nscale/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        model: "stabilityai/stable-diffusion-xl-base-1.0",
+        prompt: prompt,
+        response_format: "b64_json",
+      }),
     });
 
-    if (!blob || !(blob instanceof Blob)) {
-      throw new Error(`Invalid response from Hugging Face: Expected a Blob, but got ${typeof blob}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({ error: errText });
     }
 
-    console.log("Image blob received successfully. Size:", blob.size);
-
-    // Convert the resulting Blob to an ArrayBuffer and then to Base64
-    const arrayBuffer = await blob.arrayBuffer();
-    const base64Data = Buffer.from(arrayBuffer).toString('base64');
+    // Try to parse as JSON to get b64_json directly
+    const data = await response.json();
     
-    console.log("Image converted to Base64 successfully.");
+    if (data.data && data.data[0] && data.data[0].b64_json) {
+      return res.status(200).json({ data: data.data });
+    }
 
-    // Return the image in the format the frontend expects
-    return res.status(200).json({ data: [{ b64_json: base64Data }] });
+    // If for some reason it's not base64 despite the request, we'd handle it here
+    return res.status(200).json(data);
   } catch (error) {
-    console.error("DETAILED IMAGE ERROR:", error);
-    return res.status(500).json({ 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
-
