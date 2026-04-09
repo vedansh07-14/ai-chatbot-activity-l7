@@ -70,6 +70,7 @@ const welcomeScreen  = document.getElementById("welcomeScreen");
 const userInput      = document.getElementById("userInput");
 const sendBtn        = document.getElementById("sendBtn");
 const imageBtn       = document.getElementById("imageBtn");
+const micBtn         = document.getElementById("micBtn");
 const clearBtn       = document.getElementById("clearBtn");
 const toast          = document.getElementById("toast");
 const sidebarToggle  = document.getElementById("sidebarToggle");
@@ -719,3 +720,54 @@ console.log(
   "background: linear-gradient(135deg,#6d28d9,#4f46e5); color:#fff; font-size:14px; padding:6px 12px; border-radius:6px; font-weight:700;",
   "\nSuccessfully connected to Hugging Face API.\nEnjoy your AI experience!"
 );
+// ============================================================
+//  🎙 VOICE INPUT (STT)
+// ============================================================
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = "en-US";
+
+  let isListening = false;
+
+  recognition.onstart = () => {
+    isListening = true;
+    micBtn.classList.add("listening");
+    showToast("AURA is listening...", "success");
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    micBtn.classList.remove("listening");
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    autoResizeTextarea();
+    // Automatically send if it's a clear command
+    // sendMessage(); 
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech Recognition Error:", event.error);
+    showToast("Voice input failed. Try again.", "error");
+    micBtn.classList.remove("listening");
+  };
+
+  micBtn.addEventListener("click", () => {
+    if (isListening) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+} else {
+  // Hide mic button if not supported
+  if (micBtn) micBtn.style.display = "none";
+  console.warn("Speech Recognition not supported in this browser.");
+}
