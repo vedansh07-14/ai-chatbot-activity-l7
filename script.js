@@ -548,7 +548,16 @@ async function callImageAPI(prompt) {
     }),
   });
 
-  const data = await response.json();
+  // Safe JSON parsing
+  let data;
+  const rawText = await response.text();
+  
+  try {
+    data = JSON.parse(rawText);
+  } catch (err) {
+    console.error("RAW SERVER RESPONSE:", rawText);
+    throw new Error(`Server returned non-JSON response. Check console for "RAW SERVER RESPONSE". (Status: ${response.status})`);
+  }
 
   if (!response.ok) {
     throw new Error(`Image API error ${response.status}: ${data.error ? JSON.stringify(data.error) : 'Unknown Error'}`);
@@ -557,6 +566,7 @@ async function callImageAPI(prompt) {
   const base64Data = data.data[0].b64_json;
   return base64Data;
 }
+
 
 // ============================================================
 //  📤 SEND MESSAGE HANDLER

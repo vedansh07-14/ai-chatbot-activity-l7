@@ -4,5 +4,8 @@
   "type": "module",
   "dependencies": {
     "@huggingface/inference": "^2.8.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
